@@ -1,0 +1,273 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+
+#define MAX_ITEMS 5
+#define MAX_LEN 50
+
+struct Barang {
+	char no[4];
+	char nama[30];
+	int harga;
+};
+
+struct Pembelian {
+	char no[4];
+	int jumlah;
+};
+
+void clearScreen(){
+	#ifdef _WIN32
+	system("cls");
+	#else
+	system("clear"); 
+	#endif
+}
+
+void intToString(int value, char* result) {
+	sprintf(result ,"%d", value);
+}
+
+void swap(struct Pembelian *a, struct Pembelian *b) {
+	struct Pembelian temp = *a;
+	*a = *b;
+	*b = temp;	
+}
+
+void bubbleSort(struct Pembelian arr[], int n){
+	int i,j;
+	for (i = 0; i < n-1; i++) {
+		for (j =0; j < n-i-1; j++ ) {
+			if(arr[j].jumlah < arr[j+1].jumlah ) {
+				swap(&arr[j], &arr[j+1]);
+			}
+		}
+	}
+}
+
+	void tampilkanMenu(struct Barang items[], int maxItems) {
+	clearScreen();
+	printf("Selamat datang di Toko SKENSA. \n");
+	printf("Silahkan pilih barang yang Anda inginkan : \n");
+	printf("\n");
+	printf("==========================================\n");
+	printf("| %-4s | %-14s | %-14s |\n", "No.", "Barang", "Harga");
+	printf("------------------------------------------\n");
+	int i;
+	for (i =0; i < maxItems; i++) {
+		printf("| %-4s | %-14s | Rp.%-11d |\n",items[i].no, items[i].nama, items[i].harga);
+	}
+	printf("==========================================\n");
+	printf("\n");
+	printf("11. Input Barang \n");
+	printf("99. Struk Pembayaran \n");
+	printf("55. Reset Pilihan \n");
+	printf("00. Keluar \n");
+	printf("\n");
+	printf("==========================================\n");
+	printf("Input Pilihan yang Anda inginkan : ");
+}
+int main(){
+	time_t y = time(0);
+	char tgl[30];
+	strncpy(tgl, ctime(&y), 29);
+	tgl[29] = '\0'; 
+	
+	struct Barang items[MAX_ITEMS] = {
+		{"1","Buku Tulis",5000},
+		{"2","Pensil",2000},
+		{"3","Penghapus",1000},
+		{"4","Penggaris",1000},
+		{"5","Bujur Sangkar",500}	
+	};
+	
+	int pilihan;
+	int jumlahItemDiKeranjang = 0;
+	int totalHarga = 0, totalBayar = 0, totalDiskon = 0;
+	int uangBayar, kembalian;
+	struct Pembelian keranjang[MAX_ITEMS];
+	time_t now = time(0);
+	char strukId[MAX_LEN];
+	intToString((int)now, strukId);
+	
+	char noBarang[4];
+	int jumlah;
+	char tambahLagi;
+
+	while(1) {
+		clearScreen();
+		tampilkanMenu(items,MAX_ITEMS);
+		scanf("%d",&pilihan);
+		fflush(stdin);
+		
+		switch (pilihan) {
+			case 11:
+				do{
+					printf("Silahkan masukkan barang yang Anda inginkan : ");
+					fgets(noBarang, 4, stdin);
+					fflush(stdin);
+					noBarang[strcspn(noBarang, "\n")] = 0;
+					
+					printf("Silahkan masukkan jumlah barang : ");
+					scanf("%d", &jumlah);
+					fflush(stdin);
+					
+					int i;
+					int found = 0;
+					for(i = 0; i < MAX_ITEMS; i++) {
+						if(strcmp(items[i].no , noBarang) == 0 ) {
+							struct Pembelian pembelian;
+							strcpy(pembelian.no, noBarang);
+							pembelian.jumlah = jumlah;
+							keranjang[jumlahItemDiKeranjang++] = pembelian;
+							found = 1;
+							break;
+						}
+					}
+					if(!found) {
+						printf("Barang tidak ada di Menu, silahkan tambah lagi jika ingin melanjutkan (y)\n");
+					}
+					
+					printf("Apakah anda ingin menambah lagi ? (y/n) : ");
+					tambahLagi = getchar();
+					fflush(stdin);
+				}while (tambahLagi == 'y' || tambahLagi == 'Y' );
+			break;
+			case 99:
+    		clearScreen();
+    		totalHarga = 0;
+    		totalBayar = 0;
+    		totalDiskon = 0;
+   			bubbleSort(keranjang, jumlahItemDiKeranjang);
+
+    		//header rekapan
+    		printf("Rekapan Pesanan Barang \n");
+    		printf("=======================================================================================================\n");
+    		printf("| %-4s | %-8s | %-18s | %-18s | %-18s | %-18s |\n", "No.", "Jumlah", "Nama Barang", "Harga", "Total Harga", "Diskon");
+    		printf("=======================================================================================================\n");
+
+    		int i;
+    		int nomor = 1;
+    		for (i = 0; i < jumlahItemDiKeranjang; i++) {
+        	int hargaItem = 0, jumlahItem = keranjang[i].jumlah, diskonItem = 0;
+        	int j;
+        	for (j = 0; j < MAX_ITEMS; j++) {
+            	if (strcmp(keranjang[i].no, items[j].no) == 0) {
+                	hargaItem = items[j].harga * jumlahItem;
+                	if (jumlahItem > 5) {
+                    	diskonItem = hargaItem * 15 / 100;
+                	} else if (jumlahItem > 3) {
+                    	diskonItem = hargaItem * 10 / 100;
+                	}
+
+                	printf("| %-4d | %-8d | %-18s | Rp.%-15d | Rp.%-15d | Rp.%-15d |\n", nomor, jumlahItem, items[j].nama, items[j].harga, hargaItem, diskonItem);
+                	nomor++;
+                	break;
+            		}
+        		}
+	        	totalHarga += hargaItem;
+	        	totalDiskon += diskonItem;
+    		}
+    		totalBayar = totalHarga - totalDiskon;
+
+    		printf("=======================================================================================================\n");
+    		printf(" Total Harga = Rp.%d,- \n", totalHarga);
+    		printf(" Total Diskon = Rp.%d,- \n", totalDiskon);
+	    	printf(" Total Bayar = Rp.%d,- \n", totalBayar);
+		    printf("=======================================================================================================\n");
+    		printf(" Masukkan Uang Bayar : ");
+    		scanf("%d", &uangBayar);
+    		kembalian = uangBayar - totalBayar;
+    		printf(" Kembalian = Rp.%d,-\n", kembalian);
+    		printf("=======================================================================================================\n");
+
+    		// Writing to the file
+    		char filename[MAX_LEN];
+    		time_t now = time(0);
+    		struct tm *tm_now;
+
+    		time(&now);
+    		tm_now = localtime(&now);
+	
+    		strftime(filename, sizeof(filename), "struk_pembayaran_%Y%m%d_%H%M%S.txt", tm_now);
+
+    		FILE *fp = fopen(filename, "w");
+    		if (fp == NULL) {
+        		printf("Gagal membuat file struk. \n");
+    		}
+
+    		fprintf(fp, "==========================================================================================\n");
+    		fprintf(fp, "|                                      Toko SKENSA                                       |\n");
+    		fprintf(fp, "|                         jl.HOS Cokroaminoto No.84, Denpasar                            |\n");
+    		fprintf(fp, "|                                         Bali                                           |\n");
+    		fprintf(fp, "|                                  Telp : 0816285791                                     |\n");
+    		fprintf(fp, "| Struk Id = %-75s |\n", strukId);
+    		fprintf(fp, "==========================================================================================\n");
+    		fprintf(fp, "| %-23s | %-18s | %-18s | %-18s |\n", "Nama Barang", "Harga", "Total", "Diskon");
+    		fprintf(fp, "==========================================================================================\n");
+
+    		// Writing item details to the file
+    		int k;
+    		for (k = 0; k < jumlahItemDiKeranjang; k++) {
+        		int hargaItem = 0, jumlahItem = keranjang[k].jumlah, diskonItem = 0;
+        		char namaBarangDanJumlah[50];
+        		int m;
+
+		        for (m = 0; m < MAX_ITEMS; m++) {
+		            if (strcmp(keranjang[k].no, items[m].no) == 0) {
+        		        hargaItem = items[m].harga * jumlahItem;
+                		if (jumlahItem > 5) {
+                    		diskonItem = hargaItem * 15 / 100;
+                		} else if (jumlahItem > 3) {
+                    		diskonItem = hargaItem * 10 / 100;
+                		}
+
+                		sprintf(namaBarangDanJumlah, "%d x %s", jumlahItem, items[m].nama);
+                		fprintf(fp, "| %-23s | Rp.%-15d | Rp.%-15d | Rp.%-15d |\n", namaBarangDanJumlah, items[m].harga, hargaItem, diskonItem);
+                		break;
+            		}
+        		}
+    		}
+
+    		// Writing total, payment, and change details to the file
+    		fprintf(fp, "==========================================================================================\n");
+    		fprintf(fp, " Total Harga  = Rp.%d,-\n", totalHarga);
+    		fprintf(fp, " Total Diskon = Rp.%d,-\n", totalDiskon);
+    		fprintf(fp, " Tagihan      = Rp.%d,-\n", totalBayar);
+    		fprintf(fp, " Pembayaran   = Rp.%d,-\n", uangBayar);
+    		kembalian = uangBayar - totalBayar;
+    		fprintf(fp, " Kembalian    = Rp.%d,-\n", kembalian);
+    		fprintf(fp, "\n");
+    		fprintf(fp, "\n");
+    		fprintf(fp, " Waktu/Hari : %s \n",tgl);
+    		fprintf(fp, "==========================================================================================\n");
+    		fclose(fp);
+
+    		printf("Struk berhasil disimpan sebagai '%s' \n", filename);
+    		getchar();
+    		getchar();
+			break;
+			case 55:
+				jumlahItemDiKeranjang = 0;
+				totalBayar = 0;
+				totalHarga = 0;
+				totalDiskon = 0;
+				
+				getchar();
+			break;
+			case 00:
+				printf("Anda telah Keluar dari program...\n");
+				return 0;
+			break;
+			default :
+			printf("Pilihan tidak ditemukan, silahkan masukkan pilihan yang ada! \n"); 
+			break;
+		}
+	}
+	
+	return 0;
+}
+
+
+
